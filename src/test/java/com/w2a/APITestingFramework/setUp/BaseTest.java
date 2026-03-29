@@ -1,7 +1,6 @@
 package com.w2a.APITestingFramework.setUp;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -12,35 +11,52 @@ import io.restassured.RestAssured;
 import com.w2a.APITestingFramework.utilities.ExcelReader;
 
 public class BaseTest {
-//All initialization will be in this class, and this will be the heart of the framework.
-	public static Properties config = new Properties();
-	private FileInputStream fis; // Private because this will be accessed to only this class.
-	public static ExcelReader excel = new ExcelReader(".\\src\\test\\resources\\excel\\testdata.xlsx");
+    // Public so other classes (like your API classes) can access the loaded keys
+    public static Properties config = new Properties();
+    private FileInputStream fis; 
+    public static ExcelReader excel = new ExcelReader(".\\src\\test\\resources\\excel\\testdata.xlsx");
 
-	@BeforeSuite
-	public void setUp() {
+    @BeforeSuite
+    public void setUp() {
+        try {
+            // 1. Load the physical config.properties file from your project
+            fis = new FileInputStream(".\\src\\test\\resources\\properties\\config.properties");
+            config.load(fis);
+        } catch (IOException e) {
+            System.out.println("Error loading config file: " + e.getMessage());
+        }
 
-		try {
-			fis = new FileInputStream(".\\src\\test\\resources\\properties\\config.properties");
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        // 2. Overwrite file values with Jenkins/System properties if they exist
+        updateConfigWithSystemProperties();
 
-		try {
-			config.load(fis);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        // 3. Initialize RestAssured with the FINAL values
+        RestAssured.baseURI = config.getProperty("baseURI");
+        RestAssured.basePath = config.getProperty("basePath");
+        
+        // Optional Diagnostic: This will show in Jenkins log if the key was actually replaced
+        if (config.getProperty("validSecretKey").contains("$") || config.getProperty("validSecretKey").contains("%")) {
+            System.out.println("WARNING: Secret Key still contains placeholder symbols!");
+        }
+    }
 
-		RestAssured.baseURI = config.getProperty("baseURI");
-		 RestAssured.basePath=config.getProperty("basePath");
-	}
+    /**
+     * This method checks every key in your config.properties.
+     * If Maven/Jenkins passed a value using -D (System Property), 
+     * it replaces the placeholder in memory.
+     */
+    private void updateConfigWithSystemProperties() {
+        for (String key : config.stringPropertyNames()) {
+            String systemValue = System.getProperty(key);
+            
+            // Only update if Jenkins actually sent a value that isn't empty
+            if (systemValue != null && !systemValue.isEmpty() && !systemValue.contains("${") && !systemValue.contains("%")) {
+                config.setProperty(key, systemValue);
+            }
+        }
+    }
 
-	@AfterSuite
-	public void tearDown() {
-
-	}
-
+    @AfterSuite
+    public void tearDown() {
+        // Cleanup code if required
+    }
 }
