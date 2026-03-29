@@ -16,65 +16,52 @@ import javax.mail.internet.MimeMultipart;
 
 public class MonitoringMail {
 
-    public void sendMail(String mailServer, String from, String[] to, String subject, String messageBody) 
-            throws MessagingException, AddressException {
-        
-        Properties props = new Properties();
-        
-        // SMTP Settings
-        props.put("mail.smtp.host", mailServer);
-        props.put("mail.smtp.port", "465");
-        props.put("mail.smtp.auth", "true");
-        
-        // SSL Settings for Gmail
-        props.put("mail.smtp.socketFactory.port", "465");
-        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-        props.put("mail.smtp.socketFactory.fallback", "false");
-        
-        // Create Session
-        Authenticator auth = new SMTPAuthenticator();
-        Session session = Session.getInstance(props, auth);
+	public void sendMail(String mailServer, String from, String[] to, String subject, String messageBody) 
+	        throws MessagingException, AddressException {
+	    
+	    // 1. Force the correct ClassLoader for Jenkins/Java 21
+	    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+	    if (classLoader == null) {
+	        classLoader = MonitoringMail.class.getClassLoader();
+	    }
+	    Thread.currentThread().setContextClassLoader(classLoader);
 
-        try {
-            // CRITICAL FIX FOR JAVA 21: Manually set the ClassLoader to handle DataContentHandlers
-            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+	    Properties props = new Properties();
+	    props.put("mail.smtp.host", mailServer);
+	    props.put("mail.smtp.port", "465");
+	    props.put("mail.smtp.auth", "true");
+	    props.put("mail.smtp.socketFactory.port", "465");
+	    props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+	    props.put("mail.smtp.socketFactory.fallback", "false");
 
-            Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(from));
-            
-            // Add recipients
-            InternetAddress[] addressTo = new InternetAddress[to.length];
-            for (int i = 0; i < to.length; i++) {
-                addressTo[i] = new InternetAddress(to[i]);
-            }
-            message.setRecipients(Message.RecipientType.TO, addressTo);
-            
-            message.setSubject(subject);
-            message.addHeader("X-Priority", "1");
+	    Authenticator auth = new SMTPAuthenticator();
+	    Session session = Session.getInstance(props, auth);
 
-            // Build Email Content
-            MimeMultipart multipart = new MimeMultipart();
-            BodyPart messageBodyPart = new MimeBodyPart();
-            
-            // Set the content as HTML
-            messageBodyPart.setContent(messageBody, "text/html; charset=utf-8");
-            multipart.addBodyPart(messageBodyPart);
-            
-            message.setContent(multipart);
+	    try {
+	        // 2. Add this manually to prevent the NoClassDefFoundError
+	        MimeMessage message = new MimeMessage(session);
+	        message.setFrom(new InternetAddress(from));
+	        
+	        InternetAddress[] addressTo = new InternetAddress[to.length];
+	        for (int i = 0; i < to.length; i++) addressTo[i] = new InternetAddress(to[i]);
+	        message.setRecipients(Message.RecipientType.TO, addressTo);
+	        
+	        message.setSubject(subject);
+	        
+	        // 3. Simple approach to content to avoid DataHandler issues
+	        message.setContent(messageBody, "text/html; charset=utf-8");
 
-            // EXTRA FIX: Force update of headers and data handlers before sending
-            message.saveChanges(); 
+	        // 4. Update and Send
+	        message.saveChanges();
+	        Transport.send(message);
+	        
+	        System.out.println("=== EMAIL SENT SUCCESSFULLY ===");
 
-            // Send the email
-            Transport.send(message);
-            System.out.println("=== EMAIL SENT SUCCESSFULLY TO: " + String.join(", ", to) + " ===");
-
-        } catch (MessagingException mex) {
-            System.err.println("=== EMAIL SENDING FAILED ===");
-            mex.printStackTrace();
-            throw mex;
-        }
-    }
+	    } catch (MessagingException mex) {
+	        System.out.println("Mail Error: " + mex.getMessage());
+	        mex.printStackTrace();
+	    }
+	}
 
     private class SMTPAuthenticator extends javax.mail.Authenticator {
         @Override
