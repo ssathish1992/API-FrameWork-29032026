@@ -9,7 +9,7 @@ public class TestConfig {
     
     // We use BaseTest.getProperty to allow Jenkins to override these at runtime
     public static String from = getSetting("from", "ssathish1992@gmail.com");
-    public static String password = getSetting("password", "Devimani_22071992");
+    public static String password = getSetting("password", "tfvc mpqo zbdl hrya");
     
     public static String[] to = {"ssathish1992@gmail.com"};
     public static String subject = "Extent Project Report";

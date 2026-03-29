@@ -21,27 +21,28 @@ public class MonitoringMail {
         
         Properties props = new Properties();
         
-        // Protocol Settings
+        // Basic SMTP Settings
         props.put("mail.smtp.host", mailServer);
         props.put("mail.smtp.port", "465");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.debug", "true");
         
-        // SSL Settings for Port 465
+        // Critical SSL Settings for Gmail Port 465
         props.put("mail.smtp.socketFactory.port", "465");
         props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
         props.put("mail.smtp.socketFactory.fallback", "false");
+        
+        // Debugging (Keep this true until you receive your first email)
+        props.put("mail.debug", "true");
 
-        // Create Session with Authenticator
+        // Authenticator using your TestConfig credentials
         Authenticator auth = new SMTPAuthenticator();
         Session session = Session.getInstance(props, auth);
-        session.setDebug(true);
 
         try {
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(from));
             
-            // Set Recipients
+            // Build recipient list
             InternetAddress[] addressTo = new InternetAddress[to.length];
             for (int i = 0; i < to.length; i++) {
                 addressTo[i] = new InternetAddress(to[i]);
@@ -49,33 +50,34 @@ public class MonitoringMail {
             message.setRecipients(Message.RecipientType.TO, addressTo);
             
             message.setSubject(subject);
-            message.addHeader("X-Priority", "1");
+            message.addHeader("X-Priority", "1"); // Marks as High Priority
 
-            // Content logic
-            BodyPart body = new MimeBodyPart();
-            body.setContent(messageBody, "text/html");
+            // Create the message body
+            BodyPart messageBodyPart = new MimeBodyPart();
+            messageBodyPart.setContent(messageBody, "text/html");
 
             MimeMultipart multipart = new MimeMultipart();
-            multipart.addBodyPart(body);
+            multipart.addBodyPart(messageBodyPart);
+            
             message.setContent(multipart);
 
-            // Send
+            // Execute Send
             Transport.send(message);
-            System.out.println("Successfully Sent mail to All Users");
+            System.out.println("=== EMAIL SENT SUCCESSFULLY ===");
 
         } catch (MessagingException mex) {
-            System.out.println("Failed to send mail: " + mex.getMessage());
+            System.err.println("=== EMAIL SENDING FAILED ===");
             mex.printStackTrace();
+            throw mex; // Re-throw so the test suite knows it failed
         }
     }
 
+    // This inner class handles the login handshake
     private class SMTPAuthenticator extends javax.mail.Authenticator {
         @Override
         public PasswordAuthentication getPasswordAuthentication() {
-            // Ensure these constants exist in your TestConfig class
-            String username = TestConfig.from; 
-            String password = TestConfig.password; 
-            return new PasswordAuthentication(username, password);
+            // Pulls the ssathish1992@gmail.com and the 16-digit App Password from TestConfig
+            return new PasswordAuthentication(TestConfig.from, TestConfig.password);
         }
     }
 }

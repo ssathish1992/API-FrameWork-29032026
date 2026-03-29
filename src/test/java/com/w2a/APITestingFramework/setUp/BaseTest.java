@@ -9,6 +9,8 @@ import org.testng.annotations.BeforeSuite;
 
 import io.restassured.RestAssured;
 import com.w2a.APITestingFramework.utilities.ExcelReader;
+import com.w2a.APITestingFramework.utilities.MonitoringMail;
+import com.w2a.APITestingFramework.utilities.TestConfig;
 
 public class BaseTest {
     // Public so other classes (like your API classes) can access the loaded keys
@@ -57,6 +59,20 @@ public class BaseTest {
 
     @AfterSuite
     public void tearDown() {
-        // Cleanup code if required
+        System.out.println("Initiating post-execution report email...");
+        MonitoringMail mail = new MonitoringMail();
+        
+        try {
+            mail.sendMail(
+                TestConfig.server, 
+                TestConfig.from, 
+                TestConfig.to, 
+                TestConfig.subject, 
+                TestConfig.messageBody
+            );
+        } catch (Exception e) {
+            System.out.println("Automation Error: Could not send report email.");
+            e.printStackTrace();
+        }
     }
 }
