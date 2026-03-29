@@ -8,8 +8,8 @@ public class TestConfig {
     public static String server = "smtp.gmail.com";
     
     // We use BaseTest.getProperty to allow Jenkins to override these at runtime
-    public static String from = getSetting("from", "corporate@way2automation.com");
-    public static String password = getSetting("password", "Selenium@123");
+    public static String from = getSetting("from", "ssathish1992@gmail.com");
+    public static String password = getSetting("password", "Devimani_22071992");
     
     public static String[] to = {"ssathish1992@gmail.com"};
     public static String subject = "Extent Project Report";
