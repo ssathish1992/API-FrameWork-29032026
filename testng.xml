@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<suite name="Suite">
+	<listeners>
+		<listener class-name="com.w2a.APITestingFramework.listeners.ExtentListeners" />
+	</listeners>
+	<test name="Create Customer API Test">
+		<classes>
+			<class name="com.w2a.APITestingFramework.testcases.stripe.CreateCustomerTest" />
+		</classes>
+	</test>
+</suite>

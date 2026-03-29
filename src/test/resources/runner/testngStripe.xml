@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="Suite" parallel="tests">
+
+	<listeners>
+
+		<listener
+			class-name="com.w2a.APITestingFramework.listeners.ExtentListeners">
+		</listener>
+	</listeners>
+
+	<test name="Create Customer API Test">
+		<classes>
+			<class
+				name="com.w2a.APITestingFramework.testcases.stripe.CreateCustomerTest" />
+		</classes>
+	</test> <!--
+	Test -->
+
+
+	<test name="Delete Customer API Test">
+		<classes>
+			<class
+				name="com.w2a.APITestingFramework.testcases.stripe.DeleteCustomerTest" />
+		</classes>
+	</test> <!--
+	Test -->
+
+
+</suite> <!--
+Suite -->
